@@ -1,7 +1,7 @@
-#Project 1: Lexical Analysis
+# Project 1: Lexical Analysis
 >For this project, you will write the lexical analysis phase (i.e., the "scanner") of a simple compiler for a subset of the language "Tubular". We will start with only one variable type ("val"), basic math, and the print command to output results; basically it will be little more than a simple calculator. Over the next two projects we will turn this into a working compiler, and in the five projects following that, we will expand the functionality and efficiency of the language.
 
-##Description
+## Description
 The program you turn in must accept input via stdin and process it line-by-line, removing whitespace and comments and categorizing each word or symbol as a token. A token represents an atomic unit to be parsed, and is typically realized as one or a short series of characters in a source file such as "val", "+", or "42". You will then output (to standard out) a tokenized version of the file, as described in detail below.
 
 We will develop our compiler using the library PLY (which uses Lex and Yacc). This project will only require the use of lex, which will handle lexical analysis for us, taking as input a set of regular expressions associated with each token type. Both of these tools are included in the Python3 package "ply", which can be installed on your local machines for working on personal devices (it is already available on Mimir).
@@ -32,16 +32,16 @@ When multiple patterns match the text being processed, choose the one that produ
 
 
 
-##Output
+## Output
 Your program should convert the source file into a series of tokens that it then outputs (In Project 2, these tokens will be processed by your parser instead). The output should list each token, on a separate line, followed by a colon, a space, a nd then the associated lexeme. DO NOT output the WHITESPACE or COMMENT tokens, as they will not be needed by your parser. Finally, on the last line print "Line Count: " and then output the total number of lines in the source file.
 
-##Notes
+## Notes
 Any deviation from the specified format will result in deductions from your score. This means no additional formatting of the output and no extra information.
 Your output must go only to standard out (i.e., do not send any output to a file or to standard error).
 You should halt further scanning after printing an UNKNOWN token as this indicates that the source file must contain an error.
 The program you write may be used as the basis for future projects so you want to make it easily extensible.
 
-##Example
+## Example
 Here is the contents of an example input file:
 ```
 val test_num = 3 * (7.2 + 12.1);  # This is my comment.
