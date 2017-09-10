@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# btw3i 2017.9.10
 import ply.lex as lex
 import sys
 
@@ -101,6 +102,7 @@ def t_UNKNOWN(t):
 
 def t_error(t):
     pass
+
 
 if __name__ == "__main__":
     lexer = lex.lex()
