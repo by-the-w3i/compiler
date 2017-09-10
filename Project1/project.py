@@ -102,7 +102,6 @@ def t_UNKNOWN(t):
 def t_error(t):
     pass
 
-
 if __name__ == "__main__":
     lexer = lex.lex()
     data = sys.stdin.read()
