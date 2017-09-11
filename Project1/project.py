@@ -109,13 +109,13 @@ if __name__ == "__main__":
     data = sys.stdin.read()
 
     lexer.input(data)
-    cnt = 0
+    cnt = 1
     while True:
         tok = lexer.token()
         if not tok:
             break # no more input
         if tok.type == 'UNKNOWN':
-            print('Unknown token on line ' + str(cnt+1) + ': ' + tok.value)
+            print('Unknown token on line ' + str(cnt) + ': ' + tok.value)
             sys.exit(0)
         if tok.type == 'WHITESPACE':
             if tok.value == '\n':
