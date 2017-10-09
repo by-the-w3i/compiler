@@ -1,0 +1,97 @@
+val_copy 0 s0
+val_copy 1 s1
+val_copy 0 s2
+mult s1 s2 s3
+test_nequ 0 s3 s4
+add s0 s4 s5
+test_gtr s5 0 s6
+val_copy 0 s7
+add s6 s7 s8
+test_gtr s8 0 s9
+out_val s9
+out_char '\n'
+val_copy 0 s10
+val_copy 1 s11
+val_copy 1 s12
+mult s11 s12 s13
+test_nequ 0 s13 s14
+add s10 s14 s15
+test_gtr s15 0 s16
+val_copy 0 s17
+add s16 s17 s18
+test_gtr s18 0 s19
+out_val s19
+out_char '\n'
+val_copy 1 s20
+val_copy 0 s21
+mult s20 s21 s22
+test_nequ 0 s22 s23
+val_copy 0 s24
+val_copy 1 s25
+mult s24 s25 s26
+test_nequ 0 s26 s27
+add s23 s27 s28
+test_gtr s28 0 s29
+out_val s29
+out_char '\n'
+val_copy 1 s30
+val_copy 1 s31
+mult s30 s31 s32
+test_nequ 0 s32 s33
+val_copy 1 s34
+val_copy 0 s35
+mult s34 s35 s36
+test_nequ 0 s36 s37
+add s33 s37 s38
+test_gtr s38 0 s39
+out_val s39
+out_char '\n'
+val_copy 1 s40
+val_copy 1 s41
+val_copy 1 s42
+add s41 s42 s43
+test_gtr s43 0 s44
+mult s40 s44 s45
+test_nequ 0 s45 s46
+val_copy 0 s47
+mult s46 s47 s48
+test_nequ 0 s48 s49
+out_val s49
+out_char '\n'
+val_copy 1 s50
+val_copy 1 s51
+mult s50 s51 s52
+test_nequ 0 s52 s53
+val_copy 1 s54
+mult s53 s54 s55
+test_nequ 0 s55 s56
+val_copy 1 s57
+mult s56 s57 s58
+test_nequ 0 s58 s59
+val_copy 0 s60
+mult s59 s60 s61
+test_nequ 0 s61 s62
+val_copy 1 s63
+mult s62 s63 s64
+test_nequ 0 s64 s65
+out_val s65
+out_char '\n'
+val_copy 0 s66
+val_copy 0 s67
+add s66 s67 s68
+test_gtr s68 0 s69
+val_copy 0 s70
+add s69 s70 s71
+test_gtr s71 0 s72
+val_copy 0 s73
+add s72 s73 s74
+test_gtr s74 0 s75
+val_copy 1 s76
+add s75 s76 s77
+test_gtr s77 0 s78
+val_copy 1 s79
+add s78 s79 s80
+test_gtr s80 0 s81
+out_val s81
+out_char '\n'
+
