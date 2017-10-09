@@ -80,38 +80,144 @@ def t_COMMENT(t):
 
 
 def t_error(t):
-    print("Unknown token on line {}: {}".format(t.lexer.lineno, t.value[0]))
+    raise SyntaxError("Unknown token on line {}: {}".format(t.lexer.lineno, t.value[0]))
     exit(1)
 
 
-################# Global Variable part #########################
-SYMBOL_TABLE = {}
-precedence = (('right', '='),('left', '+', '-'),('left', '*', '/'))
+############################### Global variables
+SCOPE_TABLE = {0:{}}
+SCP = 0 # current scope
 S_CNT = 0
-##################################################################
+precedence = (('right', '='),('left', 'BOOL_OR'),('left', 'BOOL_AND'),('left', '<','>', 'COMP_EQU', \
+'COMP_NEQU', 'COMP_LTE', 'COMP_GTE'),('left', '+', '-'),('left', '*', '/'))
 
+def get_entry():
+    global S_CNT
+    entry = "s{}".format(S_CNT)
+    S_CNT += 1
+    return entry
+##############################################################
 
-################# Node Class Part #########################
-class BaseNode:
-    def __init__(self, children):
-        self.children = children
+######################### Node class parts:
+class Node:
+    def __init__(self, data = None, children = []):
+        self.data = data
+        self.children  = children
+        self.register = 'x' # indicate no register associate
 
     def generate_bad_code(self, output):
-        pass
+        raise NotImplemented("Base Node!!!")
 
-class BlockNode(BaseNode):
+class BlockNode(Node):
+    def __init__(self, children, scope):
+        super().__init__(None, children)
+        self.scope = scope
+
+    def generate_bad_code(self, output):
+        # output.append("# BlockNode START (Scope {})".format(self.scope))
+        for child in self.children:
+            child.generate_bad_code(output)
+        # output.append("# BlockNode END")
+
+class DeclareNode(Node):
+    def __init__(self, children, type):
+        super().__init__(None, children)
+        self.type = type
+
+    def generate_bad_code(self, output):
+        if self.register == 'x':
+            self.register = get_entry()
+            if self.children:
+                output.append("val_copy {} {}".format(self.children[0].generate_bad_code(output), self.register))
+        return self.register
+
+
+class DataNode(Node):
+    def __init__(self, data):
+        super().__init__(data, [])
+
+    def generate_bad_code(self, output):
+        if self.register == 'x':
+            self.register = get_entry()
+            output.append("val_copy {} {}".format(self.data, self.register))
+        return self.register
+
+
+class PrintNode(Node):
     def __init__(self, children):
-        super().__init__(children)
+        super().__init__(None, children)
+
+    def generate_bad_code(self, output):
+        for child in self.children:
+            output.append("out_val {}".format(child.generate_bad_code(output)))
+        output.append("out_char '\\n'")
 
 
-###############################################################
+
+
+class RandomNode(Node):
+    def __init__(self, children):
+        super().__init__(None, children)
+
+    def generate_bad_code(self, output):
+        if self.register == 'x':
+            self.register = get_entry()
+            output.append("random {} {}".format\
+            (self.children[0].generate_bad_code(output), self.register))
+        return self.register
+
+
+
+class OperationNode(Node):
+    def __init__(self, children, op):
+        super().__init__(None, children)
+        self.op = op
+        self.CMD_TABLE = {"+":"add", "-":"sub", "*":"mult", "/":"div",\
+         "<":"test_less", ">":"test_gtr", "==":"test_equ", \
+         "!=":"test_nequ", ">=":"test_gte", "<=":"test_lte"}
+
+    def generate_bad_code(self, output):
+        if self.register == 'x':
+            if self.op in ["+","-","*","/", ">", "<", "<=", ">=","==","!="]:
+                left = self.children[0].generate_bad_code(output)
+                right = self.children[1].generate_bad_code(output)
+                self.register = get_entry()
+                output.append("{} {} {} {}".format\
+                (self.CMD_TABLE[self.op], left, right, self.register))
+
+            elif self.op == "=":
+                frm = self.children[1].generate_bad_code(output)
+                to = self.children[0].generate_bad_code(output)
+                output.append("val_copy {} {}".format(frm, to))
+                self.register = to
+                # self.children[0].register = 'x'
+
+            elif self.op in ["&&", "||"]:
+                left = self.children[0].generate_bad_code(output)
+                right = self.children[1].generate_bad_code(output)
+                temp = get_entry()
+                self.register = get_entry()
+                if self.op == "&&":
+                    output.append("mult {} {} {}".format(left, right, temp))
+                    output.append("test_nequ 0 {} {}".format(temp, self.register))
+                elif self.op == "||":
+                    output.append("add {} {} {}".format(left, right, temp))
+                    output.append("test_gtr {} 0 {}".format(temp, self.register))
+
+        return self.register
+
+
+
+
+
+##################################################
 
 def p_program(p):
     """
     program : statements
     """
-    print("program End")
-    p[0] = p[1]
+    # print(len(p[1]))
+    p[0] = BlockNode(p[1], 0)
 
 def p_statements(p):
     """
@@ -119,19 +225,18 @@ def p_statements(p):
                |
     """
     if len(p) > 1:
-        p[1].children.append(p[2])
+        p[1].append(p[2])
         p[0] = p[1]
     else:
-        print("program start")
-        p[0] = BlockNode([])
+        p[0] = []
+
 
 def p_statement(p):
     """
     statement : expr ';'
               | declaration ';'
     """
-    pass
-
+    p[0] = p[1]
 
 
 def p_declaration(p):
@@ -139,11 +244,14 @@ def p_declaration(p):
     declaration : TYPE ID
                 | TYPE ID '=' expr
     """
-    if p[2] in SYMBOL_TABLE:
+    if p[2] in SCOPE_TABLE[SCP]:
         raise NameError("redeclaration of variable '{}'".format(p[2]))
-    ### just leave 0 for now
-    SYMBOL_TABLE[p[2]] = 0
 
+    if len(p) > 3:
+        p[0] = DeclareNode([p[4]], p[1])
+    else:
+        p[0] = DeclareNode([],p[1]) # indicate declared but not initialized
+    SCOPE_TABLE[SCP][p[2]] = p[0]
 
 
 
@@ -151,153 +259,179 @@ def p_expr_addition(p):
     """
     expr : expr '+' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'+')
 
 def p_expr_subtraction(p):
     """
     expr : expr '-' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'-')
 
 def p_expr_multiplication(p):
     """
     expr : expr '*' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'*')
 
 
 def p_expr_division(p):
     """
     expr : expr '/' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'/')
 
 
 def p_expr_comp_addition(p):
     """
     expr : expr ASSIGN_ADD expr
     """
-    pass
+    p[0] = OperationNode([p[1], OperationNode([p[1],p[3]],'+')],'=')
 
 def p_expr_comp_subtraction(p):
     """
     expr : expr ASSIGN_SUB expr
     """
-    pass
+    p[0] = OperationNode([p[1], OperationNode([p[1],p[3]],'-')],'=')
 
 def p_expr_comp_multiplication(p):
     """
     expr : expr ASSIGN_MULT expr
     """
-    pass
+    p[0] = OperationNode([p[1], OperationNode([p[1],p[3]],'*')],'=')
 
 
 def p_expr_comp_division(p):
     """
     expr : expr ASSIGN_DIV expr
     """
-    pass
+    p[0] = OperationNode([p[1], OperationNode([p[1],p[3]],'/')],'=')
 
 def p_expr_prethesis(p):
     """
     expr : '(' expr ')'
     """
-    pass
+    p[0] = p[2]
 
 def p_expr_eq(p):
     """
     expr : expr COMP_EQU expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'==')
 
 
 def p_expr_neq(p):
     """
     expr : expr COMP_NEQU expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'!=')
 
 
 def p_expr_LT(p):
     """
     expr : expr '<' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'<')
 
 def p_expr_LE(p):
     """
     expr : expr COMP_LTE expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'<=')
 
 def p_expr_GT(p):
     """
     expr : expr '>' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'>')
 
 def p_expr_GE(p):
     """
     expr : expr COMP_GTE expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'>=')
 
 def p_expr_and(p):
     """
     expr : expr BOOL_AND expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'&&')
 
 def p_expr_or(p):
     """
     expr : expr BOOL_OR expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]],'||')
 
 
 def p_expr_print(p):
     """
     expr : COMMAND_PRINT '(' arguments ')'
     """
-    pass
+    p[0] = PrintNode(p[3])
 
 def p_expr_print_args(p):
     """
     arguments : expr
-              | expr ',' arguments
+              | arguments ',' expr
     """
-    pass
+    if len(p) > 2:
+        p[1].append(p[3])
+        p[0] = p[1]
+    else:
+        p[0] = [p[1]]
 
 def p_expr_random(p):
     """
     expr : COMMAND_RANDOM '(' expr ')'
     """
-    pass
+    p[0] = RandomNode([p[3]])
 
 
-def p_expr_simple(p):
+def p_expr_simple_val(p):
     """
     expr : VAL_LITERAL
-         | variable
          | '-' VAL_LITERAL
+    """
+    if len(p) > 2:
+        p[0] = DataNode('-'+p[2])
+    else:
+        p[0] = DataNode(p[1])
+
+def p_expr_simple_var(p):
+    """
+    expr : variable
          | '-' variable
     """
-    pass
+    if len(p) > 2:
+        p[0] = OperationNode([DataNode(0), p[2]], '-')
+    else:
+        p[0] = p[1]
 
 
 def p_assignment(p):
     """
     expr : variable '=' expr
     """
-    pass
+    p[0] = OperationNode([p[1],p[3]], '=')
 
 
 def p_check_ID(p):
     """
     variable : ID
     """
-    if p[1] not in SYMBOL_TABLE:
+    if SCP not in SCOPE_TABLE:
+        SCOPE_TABLE[SCP] = {}
+
+    temp = SCP
+    while temp >= 0:
+        symbol_table = SCOPE_TABLE[temp]
+        if p[1] in symbol_table:
+            p[0] = symbol_table[p[1]]
+            break
+        temp -= 1
+    if temp < 0:
         raise NameError("unknown variable '{}'".format(p[1]))
+    # p[0] = p[1]
 
 
 def p_error(p):
@@ -305,14 +439,18 @@ def p_error(p):
 
 
 def generate_bad_code_from_string(input_):
+    ### clear all the global data
+    global SCOPE_TABLE
+    global S_CNT
+    global SCP
+    SCOPE_TABLE.clear()
+    SCOPE_TABLE = {0:{}}
+    SCP = 0 # current scope
+    S_CNT = 0
+    ##########################
     lexer = lex.lex()
     parser = yacc.yacc()
     program = parser.parse(input_, lexer=lexer)
-
-    # clear symbol table
-    SYMBOL_TABLE.clear()
-    ##########################
-
     output = []
     program.generate_bad_code(output)
     return "\n".join(output) + "\n"
