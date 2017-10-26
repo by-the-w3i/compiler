@@ -29,7 +29,7 @@ def t_VAL_LITERAL(t):
     return t
 
 def t_CHAR_LITERAL(t):
-    r'\'.\''
+    r"'(\\n|\\\\|\\t|\\'|.)'"
     return t
 
 def t_STRING_LITERAL(t):
@@ -121,5 +121,6 @@ if __name__ == "__main__":
             if tok.value == '\n':
                 cnt += 1
         elif tok.type != 'COMMENT':
-            print(tok.type + ': ' + tok.value)
+            if tok.type == "CHAR_LITERAL":
+                print(tok.type + ': ' + tok.value)
     print("Line Count:", cnt)

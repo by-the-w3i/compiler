@@ -1,0 +1,6 @@
+string x = "abc";
+val y = x.size();
+array(char) z = x;
+z.resize(y - 0.5);
+x[0] = 'A';
+print(x, z);
