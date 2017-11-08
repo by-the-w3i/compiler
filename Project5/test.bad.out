@@ -1,0 +1,36 @@
+ar_set_size a1 0
+ar_copy a1 a0
+val_copy 10 s2
+ar_set_size a0 s2
+val_copy 0 s3
+val_copy 0 s4
+ar_set_idx a0 s4 s3
+val_copy 1 s5
+val_copy 1 s6
+ar_set_idx a0 s6 s5
+val_copy 2 s8
+val_copy s8 s7
+start_while_0:
+ar_get_size a0 s9
+test_less s7 s9 s10
+jump_if_0 s10 end_while_0
+val_copy 1 s11
+sub s7 s11 s12
+ar_get_idx a0 s12 s13
+val_copy 2 s14
+sub s7 s14 s15
+ar_get_idx a0 s15 s16
+add s13 s16 s17
+ar_set_idx a0 s7 s17
+val_copy 1 s18
+add s7 s18 s19
+val_copy s19 s7
+jump start_while_0
+end_while_0:
+ar_get_size a0 s20
+val_copy 1 s21
+sub s20 s21 s22
+ar_get_idx a0 s22 s23
+out_val s23
+out_char '\n'
+
