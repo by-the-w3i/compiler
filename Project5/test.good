@@ -1,28 +1,8 @@
-#string x = "abc\n\\#";
-#val y = x.size();
-#x = "123";
-#array(char) z = x;
-#z.resize(y - 0.5);
-#x[0] = 'A';
-#print(x, z);
+array(val) y;
 
-
-#array(val) x;
-#x.resize(4);
-#x[1] = 11
-
-
-
-# A more interesting test of arrays.
-array(val) fibs;
-fibs.resize(10);
-fibs[0] = 0;
-fibs[1] = 1;
-val index = 2;
-while (index < fibs.size()) {
-  fibs[index] = fibs[index - 1] + fibs[index - 2];
-  index = index + 1;
-}
-
-# Print the last number computed.
-print(fibs[fibs.size() - 1]);
+y.resize(3);
+y[0] = 100;
+y[1] = 101;
+y[2] = 102;
+array(val) x = y;
+print(x);

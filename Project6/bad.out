@@ -1,0 +1,279 @@
+store 1000 0
+
+
+
+#ar_set_size a2 19
+load 2 regA
+val_copy 19 regB
+load 0 regC
+store regC 2
+store regB regC
+add 1 regC regD
+add regB regD regD
+store regD 0
+load regA regD
+test_gtr regB regD regE
+jump_if_n0 regE copy_start_0
+val_copy regB regD
+copy_start_0:
+test_gtr regD 0 regE
+jump_if_0 regE copy_end_0
+add 1 regA regA
+add 1 regC regC
+mem_copy regA regC
+sub regD 1 regD
+jump copy_start_0
+copy_end_0:
+
+
+
+#ar_set_idx a2 0 'H'
+load 2 regA
+add 1 regA regA
+add regA 0 regA
+val_copy 'H' regB
+store regB regA
+
+
+
+#ar_set_idx a2 1 'e'
+load 2 regA
+add 1 regA regA
+add regA 1 regA
+val_copy 'e' regB
+store regB regA
+
+
+
+#ar_set_idx a2 2 'l'
+load 2 regA
+add 1 regA regA
+add regA 2 regA
+val_copy 'l' regB
+store regB regA
+
+
+
+#ar_set_idx a2 3 'l'
+load 2 regA
+add 1 regA regA
+add regA 3 regA
+val_copy 'l' regB
+store regB regA
+
+
+
+#ar_set_idx a2 4 'o'
+load 2 regA
+add 1 regA regA
+add regA 4 regA
+val_copy 'o' regB
+store regB regA
+
+
+
+#ar_set_idx a2 5 ' '
+load 2 regA
+add 1 regA regA
+add regA 5 regA
+val_copy ' ' regB
+store regB regA
+
+
+
+#ar_set_idx a2 6 'W'
+load 2 regA
+add 1 regA regA
+add regA 6 regA
+val_copy 'W' regB
+store regB regA
+
+
+
+#ar_set_idx a2 7 'o'
+load 2 regA
+add 1 regA regA
+add regA 7 regA
+val_copy 'o' regB
+store regB regA
+
+
+
+#ar_set_idx a2 8 'r'
+load 2 regA
+add 1 regA regA
+add regA 8 regA
+val_copy 'r' regB
+store regB regA
+
+
+
+#ar_set_idx a2 9 'l'
+load 2 regA
+add 1 regA regA
+add regA 9 regA
+val_copy 'l' regB
+store regB regA
+
+
+
+#ar_set_idx a2 10 'd'
+load 2 regA
+add 1 regA regA
+add regA 10 regA
+val_copy 'd' regB
+store regB regA
+
+
+
+#ar_set_idx a2 11 '\t'
+load 2 regA
+add 1 regA regA
+add regA 11 regA
+val_copy '\t' regB
+store regB regA
+
+
+
+#ar_set_idx a2 12 '\n'
+load 2 regA
+add 1 regA regA
+add regA 12 regA
+val_copy '\n' regB
+store regB regA
+
+
+
+#ar_set_idx a2 13 '\\'
+load 2 regA
+add 1 regA regA
+add regA 13 regA
+val_copy '\\' regB
+store regB regA
+
+
+
+#ar_set_idx a2 14 ' '
+load 2 regA
+add 1 regA regA
+add regA 14 regA
+val_copy ' ' regB
+store regB regA
+
+
+
+#ar_set_idx a2 15 '"'
+load 2 regA
+add 1 regA regA
+add regA 15 regA
+val_copy '"' regB
+store regB regA
+
+
+
+#ar_set_idx a2 16 ' '
+load 2 regA
+add 1 regA regA
+add regA 16 regA
+val_copy ' ' regB
+store regB regA
+
+
+
+#ar_set_idx a2 17 '\''
+load 2 regA
+add 1 regA regA
+add regA 17 regA
+val_copy '\'' regB
+store regB regA
+
+
+
+#ar_set_idx a2 18 '\''
+load 2 regA
+add 1 regA regA
+add regA 18 regA
+val_copy '\'' regB
+store regB regA
+
+
+
+#ar_copy a2 a1
+load 2 regA
+load regA regB
+load 0 regC
+store regC 1
+store regB regC
+add 1 regC regD
+add regB regD regD
+store regD 0
+val_copy regB regD
+copy_start_1:
+test_gtr regD 0 regE
+jump_if_0 regE copy_end_1
+add 1 regA regA
+add 1 regC regC
+mem_copy regA regC
+sub regD 1 regD
+jump copy_start_1
+copy_end_1:
+val_copy 8 regA
+store regA 4
+load 4 regA
+random regA regB
+store regB 3
+
+
+
+#ar_set_idx a1 s3 '!'
+load 1 regA
+load 3 regB
+add 1 regA regA
+add regA regB regA
+val_copy '!' regB
+store regB regA
+val_copy 0 regA
+store regA 5
+
+
+
+#ar_get_size a1 s8
+load 1 regA
+mem_copy regA 8
+
+
+
+#start_while_0:
+start_while_0:
+load 8 regA
+load 5 regB
+sub regA regB regA
+store regA 6
+load 6 regA
+jump_if_0 regA end_while_0
+
+
+
+#ar_get_idx a1 s5 s7
+load 1 regA
+load 5 regB
+add 1 regA regA
+add regA regB regA
+mem_copy regA 7
+
+
+
+#out_char s7
+load 7 regA
+out_char regA
+load 5 regB
+add 1 regB regA
+store regA 5
+jump start_while_0
+end_while_0:
+
+
+
+#out_char '\n'
+out_char '\n'
+
