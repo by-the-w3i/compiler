@@ -1,0 +1,2 @@
+
+define val max(val a, string b, char c, array(val) k) {}

@@ -7,7 +7,8 @@ tokens = ('TYPE', 'COMMAND_PRINT', 'COMMAND_RANDOM', 'ID', 'VAL_LITERAL',\
 'CHAR_LITERAL', 'ASSIGN_ADD', 'ASSIGN_SUB', 'ASSIGN_MULT', 'ASSIGN_DIV', 'COMP_EQU', \
 'COMP_NEQU', 'COMP_LTE', 'COMP_GTE', 'BOOL_AND', 'BOOL_OR', 'WHITESPACE', 'COMMENT', \
 'OPEN_BLOCK', 'CLOSE_BLOCK', 'COMMAND_IF', 'COMMAND_ELSE', 'COMMAND_WHILE', 'COMMAND_BREAK',\
-'ARRAY_TYPE', 'STRING_TYPE', 'STRING_LITERAL', 'AR_METHOD_SIZE', 'AR_METHOD_RESIZE')
+'ARRAY_TYPE', 'STRING_TYPE', 'STRING_LITERAL', 'AR_METHOD_SIZE', 'AR_METHOD_RESIZE',\
+'FUNC_DEFINE', 'FUNC_RETURN')
 
 literals = "=+-*/<>!&|();,[]."
 
@@ -22,6 +23,8 @@ WHILE_NUM = 0
 WHILE_STACK = []
 #ugly array copy number
 ARR_COPY_NUM = 0
+
+IN_FUNC_FLAG = False
 
 
 precedence = (('right', '='),('left', 'BOOL_OR'),('left', 'BOOL_AND'),('left', '<','>', 'COMP_EQU', \
@@ -89,6 +92,16 @@ def t_AR_METHOD_SIZE(t):
 
 def t_AR_METHOD_RESIZE(t):
     r'\.resize'
+    return t
+
+def t_FUNC_DEFINE(t):
+    r'define\b'
+    global IN_FUNC_FLAG
+    IN_FUNC_FLAG = True
+    return t
+
+def t_FUNC_RETURN(t):
+    r'return\b'
     return t
 
 def t_ID(t):
@@ -518,6 +531,8 @@ def p_statement(p):
               | if_block
               | while_loop
               | break ';'
+              | return_statement ';'
+              | function_def
     """
     p[0] = p[1]
 
@@ -604,6 +619,67 @@ def p_declaration_string(p):
 
 
 
+def p_all_type(p):
+    """
+    all_type : TYPE
+             | STRING_TYPE
+             | ARRAY_TYPE '(' TYPE ')'
+    """
+    if len(p) > 2:
+        p[0] = "{}({})".format(p[1], p[3])
+    else:
+        p[0] = p[1]
+
+
+def p_return_statement(p):
+    """
+    return_statement : FUNC_RETURN expr
+    """
+    global IN_FUNC_FLAG
+    # print("return ", IN_FUNC_FLAG)
+    if not IN_FUNC_FLAG:
+        raise NameError("ERROR(line {}): 'return' run outside of any function.".format(LINENO))
+
+
+
+def p_function_def(p):
+    """
+    function_def : FUNC_DEFINE all_type ID '(' parameters ')' block
+                 | FUNC_DEFINE all_type ID '(' ')' block
+    """
+    # print(p[5])
+    # para = []
+    # if len(p) == 8:
+    para = p[5]
+    global IN_FUNC_FLAG
+    IN_FUNC_FLAG = False
+
+def p_prameters(p):
+    """
+    parameters : parameters ',' parameter
+               | parameter
+    """
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[1].append(p[3])
+        p[0] = p[1]
+
+def p_parameter(p):
+    """
+    parameter : all_type ID
+    """
+    p[0] = p[1]
+
+
+
+
+
+
+
+
+
+
 
 def p_expr_ar_literal(p):
     """
@@ -645,7 +721,7 @@ def p_elements(p):
     """
     if len(p) > 2:
         if p[1][0].type != p[3].type:
-            raise SyntaxError("ERROR: does not support multi types in an Array!!!")
+            raise NameError("ERROR: does not support multi types in an Array!!!")
         p[1].append(p[3])
         p[0] = p[1]
     else:

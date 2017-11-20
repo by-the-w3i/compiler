@@ -1,5 +1,1 @@
-
-
-		string y = "Hello World\t\n\\ \" ''";
-		y[random(8)] = '!';
-		print(y);
+str;
