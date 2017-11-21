@@ -1,0 +1,30 @@
+
+val_copy 3 s4
+val_copy s4 s1
+val_copy return_0 s3
+jump func
+return_0:
+out_val s2
+
+jump end
+func:
+val_copy 1 s5
+test_equ s1 s5 s6
+jump_if_0 s6 if_end_0
+val_copy 1 s2
+jump s3
+if_end_0:
+val_copy 1 s8
+sub s1 s8 s9
+push s1
+push s3
+val_copy s9 s1
+val_copy return_1 s3
+jump func
+return_1:
+pop s3
+pop s1
+mult s1 s2 s10
+val_copy s10 s2
+jump s3
+end:

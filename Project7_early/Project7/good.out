@@ -1,2 +1,13 @@
 
-define val max(val a, string b, char c, array(val) k) {}
+
+
+#define val factorial(val num){
+#  if (num == 1) return 1;
+#}
+
+define array(char) echo(array(char) x) {
+		  if (x[4] == 'h') print("77");
+		  return x;
+		}
+		val a = 4;
+		print(a);
