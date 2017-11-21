@@ -5,9 +5,7 @@
 #  if (num == 1) return 1;
 #}
 
-define array(char) echo(array(char) x) {
-		  if (x[4] == 'h') print("77");
+print(5 + 8);
+		define val multiple_parameters(val x, val y, array(val) z) {
 		  return x;
 		}
-		val a = 4;
-		print(a);

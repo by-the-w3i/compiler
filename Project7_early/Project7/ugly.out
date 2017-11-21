@@ -1,0 +1,20 @@
+store 1000 0
+val_copy 5 regA
+store regA 6
+val_copy 8 regA
+store regA 7
+load 6 regA
+load 7 regB
+add regA regB regA
+store regA 8
+load 8 regA
+out_val regA
+out_char '\n'
+# multiple_parameters DEFINE START
+jump func_multiple_parameters_end
+function_multiple_parameters:
+mem_copy 1 4
+jump s5
+func_multiple_parameters_end:
+# multiple_parameters DEFINE END
+

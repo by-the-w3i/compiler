@@ -6,11 +6,11 @@ import ply.yacc as yacc
 tokens = ('TYPE', 'COMMAND_PRINT', 'COMMAND_RANDOM', 'ID', 'VAL_LITERAL',\
 'CHAR_LITERAL', 'ASSIGN_ADD', 'ASSIGN_SUB', 'ASSIGN_MULT', 'ASSIGN_DIV', 'COMP_EQU', \
 'COMP_NEQU', 'COMP_LTE', 'COMP_GTE', 'BOOL_AND', 'BOOL_OR', 'WHITESPACE', 'COMMENT', \
-'OPEN_BLOCK', 'CLOSE_BLOCK', 'COMMAND_IF', 'COMMAND_ELSE', 'COMMAND_WHILE', 'COMMAND_BREAK',\
+'COMMAND_IF', 'COMMAND_ELSE', 'COMMAND_WHILE', 'COMMAND_BREAK',\
 'ARRAY_TYPE', 'STRING_TYPE', 'STRING_LITERAL', 'AR_METHOD_SIZE', 'AR_METHOD_RESIZE',\
 'FUNC_DEFINE', 'FUNC_RETURN')
 
-literals = "=+-*/<>!&|();,[]."
+literals = "=+-*/<>!&|();,[].}{"
 
 ############################### Global variables
 SCOPE_TABLE = {0:{}}
@@ -117,22 +117,6 @@ def t_CHAR_LITERAL(t):
 
 def t_STRING_LITERAL(t):
     r'"((\\")|[^"\n])*"'
-    return t
-
-def t_OPEN_BLOCK(t):
-    r'{'
-    global SCP
-    global SCOPE_TABLE
-    SCP += 1
-    SCOPE_TABLE[SCP] = {}
-    return t
-
-def t_CLOSE_BLOCK(t):
-    r'}'
-    global SCP
-    global SCOPE_TABLE
-    del SCOPE_TABLE[SCP]
-    SCP -= 1
     return t
 
 def t_ASSIGN_ADD(t):
@@ -601,9 +585,31 @@ def p_empty_statement(p):
 
 def p_block(p):
     """
-    block : OPEN_BLOCK statements CLOSE_BLOCK
+    block : open_block statements close_block
     """
     p[0] = BlockNode(p[2])
+
+
+def p_open_block(p):
+    """
+    open_block : '{'
+    """
+    p[0] = p[1]
+    global SCP
+    global SCOPE_TABLE
+    SCP += 1
+    SCOPE_TABLE[SCP] = {}
+
+def p_close_block(p):
+    """
+    close_block : '}'
+    """
+    p[0] = p[1]
+    global SCP
+    global SCOPE_TABLE
+    del SCOPE_TABLE[SCP]
+    SCP -= 1
+
 
 def p_if_block(p):
     """
@@ -1156,6 +1162,13 @@ def generate_ugly_code_from_string(input_):
                 output.append("{} {} {} regA".format(cmd, arg1, arg2))
                 output.append("store regA {}".format(result[1:]))
 
+            elif cmd == "jump":
+                check = lst[1]
+                if check_bad_var(check):
+                    output.append("load {} regA".format(check[1:]))
+                    check = "regA"
+                output.append("jump {}".format(check))
+
             elif "jump_if" in cmd:
                 check = lst[1]
                 if check_bad_var(check):
@@ -1268,6 +1281,6 @@ def generate_ugly_code_from_string(input_):
 if __name__ == "__main__":
     source = sys.stdin.read()
 
-    result = generate_bad_code_from_string(source)
-    # result = generate_ugly_code_from_string(source)
+    # result = generate_bad_code_from_string(source)
+    result = generate_ugly_code_from_string(source)
     print(result)
