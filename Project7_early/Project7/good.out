@@ -1,11 +1,10 @@
-
-
-
-#define val factorial(val num){
-#  if (num == 1) return 1;
-#}
-
-print(5 + 8);
-		define val multiple_parameters(val x, val y, array(val) z) {
-		  return x;
-		}
+define val countdown(val x) {
+    if (x == 0) {
+      print("Blast Off!!!");
+      return 0;
+    }
+    print(x);
+    countdown(x - 1);
+    return 0;
+  }
+  countdown(3);

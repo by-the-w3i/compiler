@@ -1,3 +1,10 @@
+define val factorial(val num){
+  if (num == 1) return 1;
+  return num * factorial(num-1);
+}
+
+print(factorial(3));
+
 
 val_copy 3 s4
 val_copy s4 s1

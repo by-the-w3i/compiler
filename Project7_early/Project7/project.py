@@ -26,6 +26,8 @@ ARR_COPY_NUM = 0
 
 FUNC_TABLE = {}
 CUR_FUNC = None
+FUNC_RETURN_CNT = 0
+HAS_RETURN = False
 
 
 precedence = (('right', '='),('left', 'BOOL_OR'),('left', 'BOOL_AND'),('left', '<','>', 'COMP_EQU', \
@@ -48,6 +50,12 @@ def get_while_entry():
     label = str(WHILE_NUM)
     WHILE_NUM += 1
     return label
+
+def get_func_return_entry():
+    global FUNC_RETURN_CNT
+    entry = "return_call_{}".format(FUNC_RETURN_CNT)
+    FUNC_RETURN_CNT+=1
+    return entry
 ##############################################################
 
 
@@ -487,7 +495,7 @@ class OperationNode(Node):
 
 
 class FuncDefineNode(Node):
-    def __init__(self, name, paras, return_type, body):
+    def __init__(self, name, paras, return_type, body=None):
         self.name = name
         self.paras = paras
         self.return_type = return_type
@@ -499,18 +507,56 @@ class FuncDefineNode(Node):
         self.return_label = get_entry()
 
     def generate_bad_code(self, output):
-        output.append("\n# {} DEFINE START".format(self.name))
+        output.append("\n# DEFINE {} START".format(self.name))
         output.append("jump func_{}_end".format(self.name))
         output.append("function_{}:".format(self.name))
-        self.body.generate_bad_code(output)
+        if self.body:
+            self.body.generate_bad_code(output)
 
         output.append("func_{}_end:".format(self.name))
-        output.append("# {} DEFINE END\n".format(self.name))
+        output.append("# DEFINE {} END\n".format(self.name))
+
 
 class FuncCallNode(Node):
-    def __init__(self, name, args):
+    def __init__(self, name, args, recurtion=False):
         self.name = name
         self.args = args
+        self.register = "x"
+        global FUNC_TABLE
+        self.type = FUNC_TABLE[self.name].return_type
+        self.recurtion = recurtion
+
+    def generate_bad_code(self, output):
+        if self.register == "x":
+            # recurtion
+            #if self.recursion:
+            for p in FUNC_TABLE[self.name].paras:
+                output.append("push {}".format(p.register))
+            # label part
+            label = get_func_return_entry()
+            output.append("push {}".format(label))
+
+            for i in range(len(self.args)):
+                frm = self.args[i].generate_bad_code(output)
+                to = FUNC_TABLE[self.name].paras[i].register
+                cmd = "val_copy"
+                if "array" in FUNC_TABLE[self.name].paras[i].type:
+                    cmd = "ar_copy"
+                output.append("{} {} {}".format(cmd, frm, to))
+
+            output.append("jump function_{}".format(self.name))
+            output.append("{}:".format(label))
+            # copy
+            cmd = "val_copy"
+            if "array" in self.type:
+                cmd = "ar_copy"
+                self.register = get_entry('a')
+            else:
+                self.register = get_entry()
+            output.append("{} {} {}".format(cmd, FUNC_TABLE[self.name].return_register, self.register))
+
+        return self.register
+
 
 class ParameterNode(Node):
     def __init__(self, name, t):
@@ -527,18 +573,23 @@ class ParameterNode(Node):
 class ReturnNode(Node):
     def __init__(self, expr, name):
         self.expr = expr
-        self.func_name = name
+        self.name = name
 
     def generate_bad_code(self, output):
         global FUNC_TABLE
-        register = FUNC_TABLE[self.func_name].return_register
-        label = FUNC_TABLE[self.func_name].return_label
+        register = FUNC_TABLE[self.name].return_register
+        label = FUNC_TABLE[self.name].return_label
 
         value = self.expr.generate_bad_code(output)
         if register[0] == "a":
             output.append("ar_copy {} {}".format(value, register)) # !array
         else:
             output.append("val_copy {} {}".format(value, register))
+        output.append("pop {}".format(label))
+
+        for i in range(len(FUNC_TABLE[self.name].paras)-1, -1, -1):
+            output.append("pop {}".format(FUNC_TABLE[self.name].paras[i].register))
+
         output.append("jump {}".format(label))
 
 
@@ -705,10 +756,13 @@ def p_return_statement(p):
         raise NameError("ERROR(line {}): 'return' run outside of any function.".format(LINENO))
 
     expr = p[2]
-    if FUNC_TABLE[CUR_FUNC][2] !=expr.type:
-        raise NameError("ERROR(line {}): incorrect return type for function '{}'. Expected: '{}', but found '{}')".format(LINENO, FUNC_TABLE[CUR_FUNC][0], FUNC_TABLE[CUR_FUNC][2], expr.type))
+    if FUNC_TABLE[CUR_FUNC].return_type !=expr.type:
+        raise NameError("ERROR(line {}): incorrect return type for function '{}'. Expected: '{}', but found '{}')".format(LINENO, FUNC_TABLE[CUR_FUNC].name, FUNC_TABLE[CUR_FUNC].return_type, expr.type))
 
     p[0] = ReturnNode(expr, CUR_FUNC)
+
+    global HAS_RETURN
+    HAS_RETURN = True
 
 
 
@@ -716,16 +770,17 @@ def p_function_def(p):
     """
     function_def : func_signature statement
     """
-    name = p[1][0]
-    paras = p[1][1]
-    return_type = p[1][2]
-    body = p[2]
+    global HAS_RETURN
+    # check has return
+    # if not HAS_RETURN:
+    #     raise NameError("ERROR(line {}): function '{}' does not have a 'return'".format(LINENO, name))
+    HAS_RETURN = False
 
-    p[0] = FuncDefineNode(name, paras, return_type, body)
+    # p[0] = FuncDefineNode(name, paras, return_type, body)
+    p[1].body = p[2]
+    p[0] = p[1]
 
-    global FUNC_TABLE
     global CUR_FUNC
-    FUNC_TABLE[name] = p[0]
     CUR_FUNC = None
 
 def p_func_signature(p):
@@ -750,7 +805,7 @@ def p_func_signature(p):
     if len(p) == 7:
         paras = p[5]
 
-    p[0] = [name, paras, return_type]
+    p[0] = FuncDefineNode(name, paras, return_type)
     CUR_FUNC = name
     FUNC_TABLE[CUR_FUNC] = p[0]
 
@@ -779,9 +834,12 @@ def p_parameter(p):
 def p_expr_function_call(p):
     """
     expr : ID '(' arguments ')'
+         | ID '(' ')'
     """
     name = p[1]
-    args = p[3]
+    args = []
+    if len(p) == 5:
+        args = p[3]
     # check the function name ID
     global FUNC_TABLE
     if name not in FUNC_TABLE:
@@ -793,7 +851,10 @@ def p_expr_function_call(p):
         if args[i].type != funcDef.paras[i].type:
             raise NameError("ERROR(line {}): Incorrect argument type provided for function '{}'".format(LINENO, name))
 
-    p[0] = FuncCallNode(name, args)
+    if CUR_FUNC == name:
+        p[0] = FuncCallNode(name, args, True)
+    else:
+        p[0] = FuncCallNode(name, args)
 
 
 
@@ -1067,20 +1128,21 @@ def p_check_ID(p):
     global SCP
     global SCOPE_TABLE
 
-    # checking function scope
-    if CUR_FUNC:
-        for para in FUNC_TABLE[CUR_FUNC][1]:
-            if para.name == p[1]:
-                p[0] = para
-                return None # end of function
-
     temp = SCP
     while temp >= 0:
         symbol_table = SCOPE_TABLE[temp]
         if p[1] in symbol_table:
             p[0] = symbol_table[p[1]]
             break
+
+        # when not found in cur scope go to check the parameters
+        if SCP==temp and CUR_FUNC!=None:
+            for para in FUNC_TABLE[CUR_FUNC].paras:
+                if para.name == p[1]:
+                    p[0] = para
+                    return None
         temp -= 1
+
     if temp < 0:
         raise NameError("ERROR(line {}): unknown variable '{}'".format(LINENO, p[1]))
     # p[0] = p[1]
@@ -1101,6 +1163,8 @@ def generate_bad_code_from_string(input_):
     global ARR_COPY_NUM
     global FUNC_TABLE
     global CUR_FUNC
+    global FUNC_RETURN_CNT
+    global HAS_RETURN
     SCOPE_TABLE.clear()
     SCOPE_TABLE = {0:{}}
     SCP = 0 # current scope
@@ -1112,6 +1176,8 @@ def generate_bad_code_from_string(input_):
     FUNC_TABLE.clear()
     FUNC_TABLE = {}
     CUR_FUNC = None
+    FUNC_RETURN_CNT = 0
+    HAS_RETURN = False
     ##########################
     lexer = lex.lex()
     parser = yacc.yacc()
@@ -1128,7 +1194,8 @@ def check_bad_var(arg):
 def generate_ugly_code_from_string(input_):
     global ARR_COPY_NUM
     result = generate_bad_code_from_string(input_)
-    output = ["store 1000 0"]
+    output = ["store 10000 0"] # start heap at 10000
+    output.append("val_copy 20000 regH") # start Call stack at 20000
     for line in result.strip().split("\n"):
         lst = line.strip().split()
         if len(lst) > 0:
@@ -1270,6 +1337,17 @@ def generate_ugly_code_from_string(input_):
                 output.append("copy_end_{}:".format(ARR_COPY_NUM))
                 ARR_COPY_NUM += 1
 
+            elif cmd == "push":
+                label = lst[1]
+                output.append("val_copy {} regA".format(label))
+                output.append("store regA regH")
+                output.append("add 1 regH regH")
+
+            elif cmd == "pop":
+                output.append("sub regH 1 regH")
+                output.append("load regH regA")
+                output.append("store regA {}".format(lst[1][1:]))
+
             else:
                 output.append(line)
 
@@ -1281,6 +1359,6 @@ def generate_ugly_code_from_string(input_):
 if __name__ == "__main__":
     source = sys.stdin.read()
 
-    # result = generate_bad_code_from_string(source)
-    result = generate_ugly_code_from_string(source)
+    result = generate_bad_code_from_string(source)
+    # result = generate_ugly_code_from_string(source)
     print(result)
