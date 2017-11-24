@@ -1,63 +1,31 @@
+val_copy 64.0 s10
+val_copy s10 s1
+push return_call_1
+jump function_halve
+return_call_1:
+val_copy s2 s11
 
-# DEFINE countdown START
-jump func_countdown_end
-function_countdown:
-val_copy 0 s4
-test_equ s1 s4 s5
+# DEFINE halve START
+jump func_halve_end
+function_halve:
+val_copy 1 s4
+test_less s1 s4 s5
 jump_if_0 s5 end_if_0
-val_copy 0 s6
-ar_set_size a10 12
-ar_set_idx a10 0 'B'
-ar_set_idx a10 1 'l'
-ar_set_idx a10 2 'a'
-ar_set_idx a10 3 's'
-ar_set_idx a10 4 't'
-ar_set_idx a10 5 ' '
-ar_set_idx a10 6 'O'
-ar_set_idx a10 7 'f'
-ar_set_idx a10 8 'f'
-ar_set_idx a10 9 '!'
-ar_set_idx a10 10 '!'
-ar_set_idx a10 11 '!'
-ar_get_size a10 s9
-start_while_0:
-sub s9 s6 s7
-jump_if_0 s7 end_while_0
-ar_get_idx a10 s6 s8
-out_char s8
-add 1 s6 s6
-jump start_while_0
-end_while_0:
-out_char '\n'
-val_copy 0 s11
-val_copy s11 s2
+val_copy 1 s6
+val_copy s6 s2
 pop s3
-pop s1
 jump s3
 end_if_0:
 out_val s1
 out_char '\n'
-push s1
+val_copy 2 s7
+div s1 s7 s8
+val_copy s8 s1
 push return_call_0
-val_copy 1 s12
-sub s1 s12 s13
-val_copy s13 s1
-jump function_countdown
+jump function_halve
 return_call_0:
-val_copy s2 s14
-val_copy 0 s15
-val_copy s15 s2
-pop s3
-pop s1
-jump s3
-func_countdown_end:
-# DEFINE countdown END
+val_copy s2 s9
+func_halve_end:
+# DEFINE halve END
 
-push s1
-push return_call_1
-val_copy 3 s16
-val_copy s16 s1
-jump function_countdown
-return_call_1:
-val_copy s2 s17
 

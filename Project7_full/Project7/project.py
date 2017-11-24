@@ -24,12 +24,12 @@ WHILE_STACK = []
 #ugly array copy number
 ARR_COPY_NUM = 0
 
+FUNC_LST = []
 FUNC_TABLE = {}
 CUR_FUNC = None
 FUNC_RETURN_CNT = 0
 HAS_RETURN = False
-
-GATHER_DEF = True
+PUPO_LST = None
 
 
 precedence = (('right', '='),('left', 'BOOL_OR'),('left', 'BOOL_AND'),('left', '<','>', 'COMP_EQU', \
@@ -39,6 +39,9 @@ def get_entry(v='s'):
     global S_CNT
     entry = "{}{}".format(v,S_CNT)
     S_CNT += 1
+
+    if PUPO_LST!=None:
+        PUPO_LST.append(entry)
     return entry
 
 def get_if_entry():
@@ -58,6 +61,18 @@ def get_func_return_entry():
     entry = "return_call_{}".format(FUNC_RETURN_CNT)
     FUNC_RETURN_CNT+=1
     return entry
+
+def push(rg):
+    cmd = "push"
+    if rg[0] =="a":
+        cmd = "ar_push"
+    return "{} {}".format(cmd, rg)
+
+def pop(rg):
+    cmd = "pop"
+    if rg[0] =="a":
+        cmd = "ar_pop"
+    return "{} {}".format(cmd, rg)
 ##############################################################
 
 
@@ -203,10 +218,9 @@ class BlockNode(Node):
 
     def generate_bad_code(self, output):
         # output.append("# BlockNode START (Scope {})".format(self.scope))
-        # print(self.children)
         for child in self.children:
-            # if not isinstance(child, FuncDefineNode):
-            child.generate_bad_code(output)
+            if not isinstance(child, FuncDefineNode):
+                child.generate_bad_code(output)
         # output.append("# BlockNode END")
 
 
@@ -506,16 +520,12 @@ class FuncDefineNode(Node):
         self.return_type = return_type
         self.body = body
 
-        self.return_register = "x"
-        self.return_label = "x"
-
-
-    def generate_bad_code(self, output):
         self.return_register = get_entry() # !array
-        if "array" in self.return_type:
+        if "array" in return_type:
             self.return_register = get_entry('a')
         self.return_label = get_entry()
 
+    def generate_bad_code(self, output):
         output.append("\n# DEFINE {} START".format(self.name))
         output.append("jump func_{}_end".format(self.name))
         output.append("function_{}:".format(self.name))
@@ -527,29 +537,49 @@ class FuncDefineNode(Node):
 
 
 class FuncCallNode(Node):
-    def __init__(self, name, args, recursion=False):
+    def __init__(self, name, args):
         self.name = name
         self.args = args
         self.register = "x"
         global FUNC_TABLE
         self.type = FUNC_TABLE[self.name].return_type
         self.paras = FUNC_TABLE[self.name].paras
-        self.recursion = recursion
 
     def generate_bad_code(self, output):
         if self.register == "x":
+            loadArgs_out = []
             for i in range(len(self.args)):
                 frm = self.args[i].generate_bad_code(output)
                 to = FUNC_TABLE[self.name].paras[i].register
                 cmd = "val_copy"
                 if "array" in FUNC_TABLE[self.name].paras[i].type:
                     cmd = "ar_copy"
-                output.append("{} {} {}".format(cmd, frm, to))
+                loadArgs_out.append("{} {} {}".format(cmd, frm, to))
+
+            #### append recurtion push
+            if PUPO_LST!=None:
+                for p in FUNC_TABLE[self.name].paras:
+                    output.append(push(p.register))
+
+                for rg in PUPO_LST:
+                    output.append(push(rg))
+
+            # load args to function paras
+            output+=loadArgs_out
+
             # label part
             label = get_func_return_entry()
             output.append("push {}".format(label))
             output.append("jump function_{}".format(self.name))
             output.append("{}:".format(label))
+
+            #### pop back
+            if PUPO_LST!=None:
+                for rg in PUPO_LST[::-1]:
+                    output.append(pop(rg))
+
+                for p in FUNC_TABLE[self.name].paras[::-1]:
+                    output.append(pop(p.register))
 
             # copy
             cmd = "val_copy"
@@ -566,7 +596,9 @@ class ParameterNode(Node):
     def __init__(self, name, t):
         self.name = name
         self.type = t
-        if "array" in t:
+        if t=="string":
+            self.type = "array(char)"
+        if "array" in self.type:
             self.register = get_entry('a')
         else:
             self.register = get_entry()
@@ -600,17 +632,8 @@ def p_program(p):
     """
     program : statements
     """
-    global GATHER_DEF
-    lst = []
-    for child in p[1]:
-        if GATHER_DEF:
-            if isinstance(child, FuncDefineNode):
-                lst.append(child)
-        else:
-            if not isinstance(child, FuncDefineNode):
-                lst.append(child)
     # print(len(p[1]))
-    p[0] = BlockNode(lst)
+    p[0] = BlockNode(p[1])
 
 def p_statements(p):
     """
@@ -620,7 +643,6 @@ def p_statements(p):
     if len(p) > 1:
         p[1].append(p[2])
         p[0] = p[1]
-
     else:
         p[0] = []
 
@@ -760,19 +782,16 @@ def p_return_statement(p):
     """
     return_statement : FUNC_RETURN expr
     """
-    if GATHER_DEF:
-        p[0] = Node()
-    else:
-        global CUR_FUNC
-        # print("return ", CUR_FUNC)
-        if not CUR_FUNC:
-            raise NameError("ERROR(line {}): 'return' run outside of any function.".format(LINENO))
+    global CUR_FUNC
+    # print("return ", CUR_FUNC)
+    if not CUR_FUNC:
+        raise NameError("ERROR(line {}): 'return' run outside of any function.".format(LINENO))
 
-        expr = p[2]
-        if FUNC_TABLE[CUR_FUNC].return_type !=expr.type:
-            raise NameError("ERROR(line {}): incorrect return type for function '{}'. Expected: '{}', but found '{}')".format(LINENO, FUNC_TABLE[CUR_FUNC].name, FUNC_TABLE[CUR_FUNC].return_type, expr.type))
+    expr = p[2]
+    if FUNC_TABLE[CUR_FUNC].return_type !=expr.type:
+        raise NameError("ERROR(line {}): incorrect return type for function '{}'. Expected: '{}', but found '{}')".format(LINENO, FUNC_TABLE[CUR_FUNC].name, FUNC_TABLE[CUR_FUNC].return_type, expr.type))
 
-        p[0] = ReturnNode(expr, CUR_FUNC)
+    p[0] = ReturnNode(expr, CUR_FUNC)
 
     global HAS_RETURN
     HAS_RETURN = True
@@ -790,7 +809,6 @@ def p_function_def(p):
     HAS_RETURN = False
 
     # p[0] = FuncDefineNode(name, paras, return_type, body)
-    # if GATHER_DEF:
     p[1].body = p[2]
     p[0] = p[1]
 
@@ -805,28 +823,20 @@ def p_func_signature(p):
     global FUNC_TABLE
     global SCP
     global CUR_FUNC
-    global GATHER_DEF
+    global FUNC_LST
 
     name = p[3]
-    if GATHER_DEF:
-        if SCP != 0:
-            raise NameError("ERROR(line {}): Attempting to define function '{}' outside of global scope!".format(LINENO, name))
-        if name in FUNC_TABLE:
-            raise NameError("ERROR(line {}): Attempting to re-define function '{}'".format(LINENO, name))
+    if SCP != 0:
+        raise NameError("ERROR(line {}): Attempting to define function '{}' outside of global scope!".format(LINENO, name))
 
-        return_type = p[2]
-        if return_type == "string":
-            return_type = "array(char)"
-        paras = []
-        if len(p) == 7:
-            paras = p[5]
+    if name in FUNC_LST:
+        raise NameError("ERROR(line {}): Attempting to re-define function '{}'".format(LINENO, name))
+    FUNC_LST.append(name) # check duplicate
 
-        p[0] = FuncDefineNode(name, paras, return_type)
-        CUR_FUNC = name
-        FUNC_TABLE[CUR_FUNC] = p[0]
-    else:
-        CUR_FUNC = name
-        p[0] = FUNC_TABLE[name]
+    p[0] = FUNC_TABLE[name]
+    CUR_FUNC = name
+
+
 
 
 def p_prameters(p):
@@ -834,19 +844,21 @@ def p_prameters(p):
     parameters : parameters ',' parameter
                | parameter
     """
-    if len(p) == 2:
-        p[0] = [p[1]]
-    else:
-        p[1].append(p[3])
-        p[0] = p[1]
+    # if len(p) == 2:
+    #     p[0] = [p[1]]
+    # else:
+    #     p[1].append(p[3])
+    #     p[0] = p[1]
+    pass
 
 def p_parameter(p):
     """
     parameter : all_type ID
     """
-    if p[1] == "string":
-        p[1] = "array(char)"
-    p[0] = ParameterNode(p[2], p[1])
+    # if p[1] == "string":
+    #     p[1] = "array(char)"
+    # p[0] = ParameterNode(p[2], p[1])
+    pass
 
 
 def p_expr_function_call(p):
@@ -854,33 +866,26 @@ def p_expr_function_call(p):
     expr : ID '(' arguments ')'
          | ID '(' ')'
     """
-    if GATHER_DEF:
-        p[0] = Node()
-    else:
-        name = p[1]
-        args = []
-        if len(p) == 5:
-            args = p[3]
-        # check the function name ID
-        global FUNC_TABLE
-        if name not in FUNC_TABLE:
-            raise NameError("ERROR(line {}): unknown function '{}'".format(LINENO, name))
-        funcDef = FUNC_TABLE[name] # get the node
-        if len(args) != len(funcDef.paras):
-            raise NameError("ERROR(line {}): Incorrect number of arguments provided for function '{}' (expected {}, received {})".format(LINENO, name, len(funcDef.paras), len(args)))
-        for i in range(len(args)):
-            if args[i].type != funcDef.paras[i].type:
-                raise NameError("ERROR(line {}): Incorrect argument type provided for function '{}'".format(LINENO, name))
+    name = p[1]
+    args = []
+    if len(p) == 5:
+        args = p[3]
+    # check the function name ID
+    global FUNC_TABLE
+    if name not in FUNC_TABLE:
+        raise NameError("ERROR(line {}): unknown function '{}'".format(LINENO, name))
+    funcDef = FUNC_TABLE[name] # get the node
+    if len(args) != len(funcDef.paras):
+        raise NameError("ERROR(line {}): Incorrect number of arguments provided for function '{}' (expected {}, received {})".format(LINENO, name, len(funcDef.paras), len(args)))
+    for i in range(len(args)):
+        if args[i].type != funcDef.paras[i].type:
+            raise NameError("ERROR(line {}): Incorrect argument type provided for function '{}'".format(LINENO, name))
 
-        if CUR_FUNC == name:
-            p[0] = FuncCallNode(name, args, True)
-        else:
-            p[0] = FuncCallNode(name, args)
-
-
-
-
-
+    # if CUR_FUNC == name:
+    #     p[0] = FuncCallNode(name, args, True)
+    # else:
+    #     p[0] = FuncCallNode(name, args)
+    p[0] = FuncCallNode(name, args)
 
 
 
@@ -1186,7 +1191,14 @@ def generate_bad_code_from_string(input_):
     global CUR_FUNC
     global FUNC_RETURN_CNT
     global HAS_RETURN
-    global GATHER_DEF
+    global FUNC_LST
+    global PUPO_LST
+
+    PUPO_LST = None
+
+    FUNC_LST.clear()
+    FUNC_LST = []
+
     SCOPE_TABLE.clear()
     SCOPE_TABLE = {0:{}}
     SCP = 0 # current scope
@@ -1200,40 +1212,19 @@ def generate_bad_code_from_string(input_):
     CUR_FUNC = None
     FUNC_RETURN_CNT = 0
     HAS_RETURN = False
-
-    GATHER_DEF = True
     ##########################
     lexer = lex.lex()
     parser = yacc.yacc()
-    output = []
-
-    ## to get the FUNC_TABLE
-    GATHER_DEF = True
-    parser.parse(input_, lexer=lexer)
-
-    GATHER_DEF = False
-    SCOPE_TABLE.clear()
-    SCOPE_TABLE = {0:{}}
-    SCP = 0 # current scope
-    S_CNT = 1
-    LINENO = 1
-    IF_NUM = 0
-    ARR_COPY_NUM = 0
-    CUR_FUNC = None
-    FUNC_RETURN_CNT = 0
-    HAS_RETURN = False
-    ####### reset for second round
+    # update all the functable
+    header(input_)
     program = parser.parse(input_, lexer=lexer)
-
-
-    func_output = []
-    #complie the define_functions
-    for k in FUNC_TABLE:
-        FUNC_TABLE[k].generate_bad_code(func_output)
+    output = []
     program.generate_bad_code(output)
 
-    output += func_output
-
+    #complie the define_functions
+    for k in FUNC_TABLE:
+        PUPO_LST = []
+        FUNC_TABLE[k].generate_bad_code(output)
     return "\n".join(output) + "\n"
 
 ########### Bad to Ugly translater ###########################################
@@ -1387,13 +1378,15 @@ def generate_ugly_code_from_string(input_):
                 output.append("copy_end_{}:".format(ARR_COPY_NUM))
                 ARR_COPY_NUM += 1
 
-            elif cmd == "push":
-                label = lst[1]
-                output.append("val_copy {} regA".format(label))
+            elif "push" in cmd:
+                if "return_call" in lst[1]:
+                    output.append("val_copy {} regA".format(lst[1]))
+                else:
+                    output.append("load {} regA".format(lst[1][1:]))
                 output.append("store regA regH")
                 output.append("add 1 regH regH")
 
-            elif cmd == "pop":
+            elif "pop" in cmd:
                 output.append("sub regH 1 regH")
                 output.append("load regH regA")
                 output.append("store regA {}".format(lst[1][1:]))
@@ -1403,6 +1396,31 @@ def generate_ugly_code_from_string(input_):
 
 
     return "\n".join(output) + "\n"
+#################################################
+### get all the function signature
+def header(src):
+    import re
+    global FUNC_TABLE
+    result = re.findall(r"^\s*(define\s+(string|val|char|array\((char|val)\))\s+\w+\s*\(.*\))\s*\{?", src, re.MULTILINE)
+    for tup in result:
+        signature = re.findall(r"define\s+(string|val|char|array\((char|val)\))\s+(\w+)\s*\((.*)\)", tup[0])[0]
+        return_type = signature[0]
+        if return_type == "string":
+            return_type = "array(char)"
+        name = signature[2]
+        paras_lst = signature[3].split(',')
+
+        paras = []
+        for p in paras_lst:
+            p = p.strip()
+            if p != '':
+                p_lst = p.split()
+                p_type = p_lst[0]
+                p_name = p_lst[1]
+                para = ParameterNode(p_name, p_type)
+                paras.append(para)
+
+        FUNC_TABLE[name] = FuncDefineNode(name, paras, return_type)
 
 
 ############################################################################

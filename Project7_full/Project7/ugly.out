@@ -1,0 +1,139 @@
+store 10000 0
+val_copy 20000 regH
+val_copy 11 regA
+store regA 5
+mem_copy 5 4
+# DEFINE abc START
+jump func_abc_end
+function_abc:
+val_copy 0 regA
+store regA 6
+load 10 regA
+val_copy 10 regB
+load 0 regC
+store regC 10
+store regB regC
+add 1 regC regD
+add regB regD regD
+store regD 0
+load regA regD
+test_gtr regB regD regE
+jump_if_n0 regE copy_start_0
+val_copy regB regD
+copy_start_0:
+test_gtr regD 0 regE
+jump_if_0 regE copy_end_0
+add 1 regA regA
+add 1 regC regC
+mem_copy regA regC
+sub regD 1 regD
+jump copy_start_0
+copy_end_0:
+load 10 regA
+add 1 regA regA
+add regA 0 regA
+val_copy 'p' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 1 regA
+val_copy 'a' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 2 regA
+val_copy 'r' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 3 regA
+val_copy 'a' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 4 regA
+val_copy 'm' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 5 regA
+val_copy ' ' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 6 regA
+val_copy 'x' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 7 regA
+val_copy ' ' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 8 regA
+val_copy '=' regB
+store regB regA
+load 10 regA
+add 1 regA regA
+add regA 9 regA
+val_copy ' ' regB
+store regB regA
+load 10 regA
+mem_copy regA 9
+start_while_0:
+load 9 regA
+load 6 regB
+sub regA regB regA
+store regA 7
+load 7 regA
+jump_if_0 regA end_while_0
+load 10 regA
+load 6 regB
+add 1 regA regA
+add regA regB regA
+mem_copy regA 8
+load 8 regA
+out_char regA
+load 6 regB
+add 1 regB regA
+store regA 6
+jump start_while_0
+end_while_0:
+load 1 regA
+out_val regA
+out_char '\n'
+val_copy 9 regA
+store regA 12
+mem_copy 12 11
+val_copy 3 regA
+store regA 13
+load 1 regA
+load 13 regB
+add regA regB regA
+store regA 14
+mem_copy 14 1
+mem_copy 1 2
+sub regH 1 regH
+load regH regA
+store regA 3
+load 3 regA
+jump regA
+func_abc_end:
+# DEFINE abc END
+val_copy 100 regA
+store regA 15
+mem_copy 15 1
+val_copy return_call_0 regA
+store regA regH
+add 1 regH regH
+jump function_abc
+return_call_0:
+mem_copy 2 16
+load 16 regA
+out_val regA
+out_char '\n'
+load 4 regA
+out_val regA
+out_char '\n'
+

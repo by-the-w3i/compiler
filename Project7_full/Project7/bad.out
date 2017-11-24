@@ -1,0 +1,60 @@
+val_copy 2 s4
+val_copy s4 s1
+push return_call_0
+jump function_fact
+return_call_0:
+val_copy s2 s5
+out_val s5
+out_char '\n'
+val_copy 4 s6
+val_copy s6 s1
+push return_call_1
+jump function_fact
+return_call_1:
+val_copy s2 s7
+out_val s7
+out_char '\n'
+val_copy 8 s8
+val_copy s8 s1
+push return_call_2
+jump function_fact
+return_call_2:
+val_copy s2 s9
+out_val s9
+out_char '\n'
+
+# DEFINE fact START
+jump func_fact_end
+function_fact:
+val_copy 1 s10
+test_lte s1 s10 s11
+jump_if_0 s11 end_if_0
+val_copy s1 s2
+pop s3
+jump s3
+end_if_0:
+val_copy 1 s12
+sub s1 s12 s13
+push s1
+push s10
+push s11
+push s12
+push s13
+val_copy s13 s1
+push return_call_3
+jump function_fact
+return_call_3:
+pop s13
+pop s12
+pop s11
+pop s10
+pop s1
+val_copy s2 s14
+mult s1 s14 s15
+val_copy s15 s2
+pop s3
+jump s3
+func_fact_end:
+# DEFINE fact END
+
+
