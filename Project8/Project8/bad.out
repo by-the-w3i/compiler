@@ -1,0 +1,131 @@
+ar_set_size a7 0
+ar_copy a7 a6
+ar_set_size a6 10
+random 8 s10
+val_copy s10 s9
+add s9 1 s13
+ar_set_idx a6 0 s13
+add s9 2 s16
+ar_set_idx a6 1 s16
+ar_set_idx a6 2 s13
+ar_get_idx a6 0 s22
+test_equ s22 s13 s25
+val_copy 0 s27
+jump_if_0 s25 end_if_0
+ar_get_idx a6 1 s29
+add s9 2 s31
+test_equ s29 s31 s32
+test_nequ 0 s32 s27
+end_if_0:
+jump_if_0 s27 end_if_1
+add s9 2 s34
+ar_set_idx a6 3 s34
+end_if_1:
+ar_get_idx a6 0 s37
+add s9 1 s39
+test_equ s37 s39 s40
+val_copy 0 s42
+jump_if_0 s40 end_if_2
+ar_get_idx a6 1 s44
+add s9 2 s46
+test_equ s44 s46 s47
+test_nequ 0 s47 s42
+end_if_2:
+jump_if_0 s42 end_if_3
+add s9 1 s49
+add s49 s9 s50
+add s50 1 s52
+sub s52 s9 s53
+add s53 1 s55
+ar_set_idx a6 4 s55
+end_if_3:
+add s9 2 s58
+ar_set_idx a6 5 s58
+ar_copy a6 a1
+val_copy s9 s2
+push return_call_0
+jump function_doLoop
+return_call_0:
+ar_copy a4 a60
+ar_copy a60 a6
+val_copy 0 s61
+ar_get_size a6 s64
+start_while_0:
+sub s64 s61 s62
+jump_if_0 s62 end_while_0
+ar_get_idx a6 s61 s63
+out_val s63
+add 1 s61 s61
+jump start_while_0
+end_while_0:
+out_char '\n'
+
+# DEFINE doLoop START
+jump func_doLoop_end
+function_doLoop:
+val_copy 0 s65
+start_while_1:
+test_less s65 4 s68
+jump_if_0 s68 end_while_1
+div s65 2 s70
+add s2 s70 s71
+add s71 1 s73
+add 6 s65 s77
+ar_set_idx a1 s77 s73
+add 6 s65 s86
+ar_set_idx a1 s86 s73
+add 6 s65 s95
+ar_set_idx a1 s95 s73
+jump_if_0 1 end_if_4
+div s65 2 s98
+add s2 s98 s99
+add s99 1 s101
+add 6 s65 s105
+ar_set_idx a1 s105 s101
+end_if_4:
+jump_if_0 1 end_if_5
+div s65 2 s108
+add s2 s108 s109
+add s109 1 s111
+add 6 s65 s115
+ar_set_idx a1 s115 s111
+end_if_5:
+jump_if_0 1 end_if_6
+div s65 2 s118
+add s2 s118 s119
+add s119 1 s121
+add 6 s65 s125
+ar_set_idx a1 s125 s121
+end_if_6:
+jump_if_0 0 end_if_7
+div s65 2 s128
+add s2 s128 s129
+add s129 1 s131
+add 6 s65 s135
+ar_set_idx a1 s135 s131
+end_if_7:
+jump_if_0 0 end_if_8
+div s65 2 s138
+add s2 s138 s139
+add s139 1 s141
+add 6 s65 s145
+ar_set_idx a1 s145 s141
+end_if_8:
+jump_if_0 0 end_if_9
+div s65 2 s148
+add s2 s148 s149
+add s149 1 s151
+add 6 s65 s155
+ar_set_idx a1 s155 s151
+end_if_9:
+add s65 1 s157
+val_copy s157 s65
+jump start_while_1
+end_while_1:
+ar_copy a1 a4
+pop s5
+jump s5
+func_doLoop_end:
+# DEFINE doLoop END
+
+

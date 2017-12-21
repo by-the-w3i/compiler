@@ -1,0 +1,142 @@
+ar_set_size a4 10
+random 8 s9
+val_copy s9 s5
+add s9 1 s11
+ar_set_idx a4 0 s11
+add s9 2 s15
+ar_set_idx a4 1 s15
+ar_set_idx a4 2 s11
+ar_get_idx a4 0 s24
+test_equ s24 s11 s27
+test_nequ 0 s27 s22
+jump_if_0 s22 BooleanOperator_1
+ar_get_idx a4 1 s29
+add s5 2 s31
+test_equ s29 s31 s32
+test_nequ 0 s32 s22
+BooleanOperator_1:
+jump_if_0 s22 If_False_0
+add s5 2 s34
+ar_set_idx a4 3 s34
+jump If_End_2
+If_False_0:
+If_End_2:
+ar_get_idx a4 0 s39
+add s5 1 s41
+test_equ s39 s41 s42
+test_nequ 0 s42 s37
+jump_if_0 s37 BooleanOperator_4
+ar_get_idx a4 1 s44
+add s5 2 s46
+test_equ s44 s46 s47
+test_nequ 0 s47 s37
+BooleanOperator_4:
+jump_if_0 s37 If_False_3
+add s5 1 s49
+add s49 s5 s50
+add s50 1 s52
+sub s52 s5 s53
+add s53 1 s55
+ar_set_idx a4 4 s55
+jump If_End_5
+If_False_3:
+If_End_5:
+add s5 2 s59
+ar_set_idx a4 5 s59
+ar_copy a4 a1
+val_copy s5 s2
+push return_after_call_6
+jump function_doLoop
+return_after_call_6:
+ar_copy a6 a62
+ar_copy a62 a4
+ar_get_size a4 s63
+val_copy 0 s64
+start_array_print_7:
+test_gte s64 s63 s65
+jump_if_n0 s65 end_array_print_8
+ar_get_idx a4 s64 s66
+out_val s66
+add 1 s64 s64
+jump start_array_print_7
+end_array_print_8:
+out_char 10
+
+
+
+
+
+jump define_functions_end
+function_doLoop:
+val_copy 0 s3
+While_Start_9:
+test_less s3 4 s69
+jump_if_0 s69 While_End_10
+add s2 s91 s72
+add s72 1 s74
+add 6 s3 s78
+ar_set_idx a1 s78 s74
+div s3 2 s81
+add s2 s81 s82
+add s82 1 s84
+ar_set_idx a1 s78 s84
+ar_set_idx a1 s78 s84
+div s3 2 s102
+add s2 s102 s103
+add s103 1 s105
+add 6 s3 s109
+ar_set_idx a1 s109 s105
+jump If_End_12
+If_False_11:
+If_End_12:
+div s3 2 s113
+add s2 s113 s114
+add s114 1 s116
+add 6 s3 s120
+ar_set_idx a1 s120 s116
+jump If_End_14
+If_False_13:
+If_End_14:
+div s3 2 s124
+add s2 s124 s125
+add s125 1 s127
+add 6 s3 s131
+ar_set_idx a1 s131 s127
+jump If_End_16
+If_False_15:
+If_End_16:
+jump If_False_17
+div s3 2 s135
+add s2 s135 s136
+add s136 1 s138
+add 6 s3 s142
+ar_set_idx a1 s142 s138
+jump If_End_18
+If_False_17:
+If_End_18:
+jump If_False_19
+div s3 2 s146
+add s2 s146 s147
+add s147 1 s149
+add 6 s3 s153
+ar_set_idx a1 s153 s149
+jump If_End_20
+If_False_19:
+If_End_20:
+jump If_False_21
+div s3 2 s157
+add s2 s157 s158
+add s158 1 s160
+add 6 s3 s164
+ar_set_idx a1 s164 s160
+jump If_End_22
+If_False_21:
+If_End_22:
+add s3 1 s167
+val_copy s167 s3
+jump While_Start_9
+While_End_10:
+ar_copy a1 a6
+pop s168
+jump s168
+define_functions_end:
