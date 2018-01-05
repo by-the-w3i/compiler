@@ -1,2 +1,2 @@
 # compiler
-self-written compiler for C like languages
+Use Python to build a C-like programming language compiler
